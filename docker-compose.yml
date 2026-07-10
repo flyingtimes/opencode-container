@@ -1,0 +1,43 @@
+services:
+  opencode:
+    build: .
+    image: opencode:latest
+    container_name: opencode
+    # TUI 程序必须有 TTY + 交互式 stdin
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+
+    volumes:
+      # 待操作的代码目录（挂载本仓库根目录到容器 /workspace，opencode.json 也在其中）
+      - ./opencode.json:/workspace/.opencode/opencode.json
+      - ./skills:/workspace/.opencode/skills
+      - ./output:/workspace/output
+      # opencode 自身的配置/会话/鉴权数据，避免每次重建丢失
+      - ./opencode-data:/root/.local/share/opencode
+
+
+    environment:
+      # 智谱 GLM Coding Plan 的 API Key（opencode.json 的 zhipu provider 通过 env 读取此变量）
+      ZHIPU_API_KEY: ${ZHIPU_API_KEY}
+      # 让容器内 git 提交显示正确的用户身份（可选，按需修改）
+      GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-dev}
+      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-dev@example.com}
+      GIT_COMMITTER_NAME: ${GIT_AUTHOR_NAME:-dev}
+      GIT_COMMITTER_EMAIL: ${GIT_AUTHOR_EMAIL:-dev@example.com}
+      # 关闭 bun 的 transpiler 缓存（容器内无意义，官方 Dockerfile 也这么做）
+      BUN_RUNTIME_TRANSPILER_CACHE_PATH: "0"
+      # draw 技能访问宿主 Ollama 的地址（Docker Desktop 自带 host.docker.internal；
+      # Linux 需靠下方 extra_hosts 映射）。改 OLLAMA_HOST 可指向任意 Ollama 实例。
+      OLLAMA_HOST: ${OLLAMA_HOST:-host.docker.internal}
+
+    # 确保容器能解析宿主：macOS/Windows 的 Docker Desktop 已内置 host.docker.internal，
+    # Linux 下 extra_hosts 兜底（host-gateway 解析为宿主网关 IP）。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    # 不自动常驻：TUI 程序应按需 `docker compose run` 进去交互
+    restart: "no"
+
+volumes:
+  opencode-data:

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "zhipu": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "智谱 GLM Coding Plan",
+      "api": "OpenAI Compatible",
+      "options": {
+        "baseURL": "https://open.bigmodel.cn/api/coding/paas/v4"
+      },
+      "env": ["ZHIPU_API_KEY"],
+      "models": {
+        "GLM-5.2": {
+          "name": "GLM-5.2 (主力，推荐)",
+          "tool_call": true,
+          "reasoning": true,
+          "attachment": true
+        },
+        "GLM-5-Turbo": {
+          "name": "GLM-5-Turbo 旗舰",
+          "tool_call": true,
+          "reasoning": true,
+          "attachment": true
+        },
+        "GLM-4.7": {
+          "name": "GLM-4.7 轻量",
+          "tool_call": true,
+          "reasoning": true,
+          "attachment": true
+        }
+      }
+    }
+  },
+  "model": "zhipu/GLM-5.2",
+  "small_model": "zhipu/GLM-4.7"
+}
