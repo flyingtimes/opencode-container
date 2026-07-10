@@ -7,6 +7,7 @@
 - **模型**：智谱 GLM Coding Plan（GLM-5.2 / GLM-5-Turbo / GLM-4.7），默认 GLM-5.2
 - **Python 3.12 执行环境**：预装数据科学 + Office 文档处理包
 - **draw 技能**：Ollama 本地图片生成（x/z-image-turbo）与图片分析（Qwen3.6 Vision）
+- **guizang-ppt-skill**：生成横向翻页网页 PPT（单 HTML 文件，电子杂志风 / 瑞士国际主义风）
 - **中国大陆网络友好**：内置 daocloud 镜像源、npmmirror、清华 PyPI
 
 ## 目录结构
@@ -19,10 +20,15 @@ opencode-container/
 ├── .env                    # API Key（gitignore，需自行填写）
 ├── .env.example            # 环境变量模板
 ├── skills/                 # → 容器内 /workspace/.opencode/skills
-│   └── draw/               # draw 技能（持久化在项目目录）
+│   ├── draw/               # draw 技能（Ollama 图片生成/分析）
+│   │   ├── SKILL.md
+│   │   ├── scripts/{draw,vision}.py
+│   │   └── references/
+│   └── guizang-ppt-skill/  # 网页 PPT 技能（电子杂志风 / 瑞士风）
 │       ├── SKILL.md
-│       ├── scripts/{draw,vision}.py
-│       └── references/
+│       ├── assets/ (HTML 模板、背景图、motion.js)
+│       ├── references/ (主题/布局/组件规范)
+│       └── scripts/ (validate-swiss-deck.mjs)
 ├── output/                 # → 容器内 /workspace/output（生成图片，gitignore）
 └── opencode-data/          # → /root/.local/share/opencode（会话/数据库，gitignore）
 ```
@@ -94,6 +100,16 @@ launchctl setenv OLLAMA_HOST 0.0.0.0:11434
 在 TUI 里对 opencode 说「画一匹马」或「分析这张图」即可触发。
 
 > **注意输出路径**：图片应存到 `/workspace/output/`（宿主对应 `./output/`）。不要用 `~` 或容器外路径——opencode 默认禁止访问工作目录之外的位置。
+
+### guizang-ppt-skill（网页 PPT 生成）
+
+技能位于 `skills/guizang-ppt-skill/`（来源 [op7418/guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill)），随挂载进入容器，opencode 自动加载。
+
+- 生成**单文件 HTML** 横向翻页网页 PPT，含 WebGL 背景、章节封幕、数据大字报、图片网格等模板
+- 两种风格：**电子杂志风**（衬线 + 流体背景） / **瑞士国际主义风**（无衬线 + 网格点阵）
+- 无额外依赖（Node 校验脚本仅用内置 `fs`）
+
+在 TUI 里对 opencode 说「帮我做一份瑞士风 PPT，主题是 XX，控制在 7 页」即可触发。生成的 HTML 建议存到 `/workspace/output/`。
 
 ### 模型配置
 
