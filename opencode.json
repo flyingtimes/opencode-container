@@ -1,5 +1,21 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "zai-mcp-server": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@z_ai/mcp-server"
+      ],
+      "environment": {
+        "Z_AI_API_KEY": "{env:ZHIPU_API_KEY}",
+        "Z_AI_MODE": "ZHIPU",
+        "Z_AI_BASE_URL": "https://open.bigmodel.cn/api/coding/paas/v4/"
+      },
+      "enabled": true
+    }
+  },
   "provider": {
     "zhipu": {
       "npm": "@ai-sdk/openai-compatible",
@@ -8,7 +24,9 @@
       "options": {
         "baseURL": "https://open.bigmodel.cn/api/coding/paas/v4"
       },
-      "env": ["ZHIPU_API_KEY"],
+      "env": [
+        "ZHIPU_API_KEY"
+      ],
       "models": {
         "GLM-5.2": {
           "name": "GLM-5.2 (主力，推荐)",

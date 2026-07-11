@@ -118,8 +118,8 @@ def analyze(img_path: str, prompt: str, model: str) -> dict:
             ["curl", "-s", "-m", "180", "-w", "\n%{http_code}",
              "-X", "POST", API_URL,
              "-H", "Content-Type: application/json",
-             "-d", payload],
-            capture_output=True, text=True, timeout=200,
+             "--data-binary", "@-"],
+            input=payload, capture_output=True, text=True, timeout=200,
         )
     except FileNotFoundError:
         print("错误: 未找到 curl，请安装 curl 后重试", file=sys.stderr)

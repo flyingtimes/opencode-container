@@ -8,15 +8,17 @@
 - **Python 3.12 执行环境**：预装数据科学 + Office 文档处理包
 - **draw 技能**：Ollama 本地图片生成（x/z-image-turbo）与图片分析（Qwen3.6 Vision）
 - **guizang-ppt-skill**：生成横向翻页网页 PPT（单 HTML 文件，电子杂志风 / 瑞士国际主义风）
+- **opencli 浏览器控制**：通过 opencli 驱动宿主机已登录的 Chrome（页面操作、数据提取、登录流程）
 - **中国大陆网络友好**：内置 daocloud 镜像源、npmmirror、清华 PyPI
 
 ## 目录结构
 
 ```
 opencode-container/
-├── Dockerfile              # 镜像构建（python:3.12-alpine + opencode-ai）
+├── Dockerfile              # 镜像构建（python:3.12-alpine + opencode-ai + opencli）
+├── patch-opencli.mjs       # opencli 补丁：daemon 地址可经环境变量覆盖
 ├── docker-compose.yml      # 交互式运行配置
-├── opencode.json           # 智谱 provider + GLM 模型配置
+├── opencode.json           # 智谱 provider + GLM 模型配置 + MCP
 ├── .env                    # API Key（gitignore，需自行填写）
 ├── .env.example            # 环境变量模板
 ├── skills/                 # → 容器内 /workspace/.opencode/skills
@@ -24,11 +26,10 @@ opencode-container/
 │   │   ├── SKILL.md
 │   │   ├── scripts/{draw,vision}.py
 │   │   └── references/
-│   └── guizang-ppt-skill/  # 网页 PPT 技能（电子杂志风 / 瑞士风）
-│       ├── SKILL.md
-│       ├── assets/ (HTML 模板、背景图、motion.js)
-│       ├── references/ (主题/布局/组件规范)
-│       └── scripts/ (validate-swiss-deck.mjs)
+│   ├── guizang-ppt-skill/  # 网页 PPT 技能（电子杂志风 / 瑞士风）
+│   │   └── SKILL.md + assets/ + references/
+│   └── opencli-browser/    # opencli 浏览器控制技能
+│       └── SKILL.md
 ├── output/                 # → 容器内 /workspace/output（生成图片，gitignore）
 └── opencode-data/          # → /root/.local/share/opencode（会话/数据库，gitignore）
 ```
@@ -111,6 +112,25 @@ launchctl setenv OLLAMA_HOST 0.0.0.0:11434
 
 在 TUI 里对 opencode 说「帮我做一份瑞士风 PPT，主题是 XX，控制在 7 页」即可触发。生成的 HTML 建议存到 `/workspace/output/`。
 
+### opencli 浏览器控制（驱动宿主机已登录的 Chrome）
+
+容器内置 [opencli](https://github.com/jackwener/opencli) CLI，可通过它控制**宿主机上你已登录的 Chrome**——复用所有登录态，无需重新登录。
+
+**前提（宿主机侧）：**
+1. 安装 opencli CLI 并和容器同版本：`npm i -g @jackwener/opencli@1.8.6`
+2. Chrome 安装并启用 **Browser Bridge 扩展**
+3. daemon 处于运行状态（执行一次 `opencli doctor` 触发，默认常驻 4 小时）
+4. 确认 `opencli doctor` 显示 `Extension: connected`
+
+**工作原理：** 容器内 opencli 通过 `OPENCLI_DAEMON_HOST=host.docker.internal` 连接宿主机 daemon → daemon 经 WebSocket 转发给浏览器扩展 → 扩展用 CDP 操控真实 Chrome。由于 opencli 硬编码连 `127.0.0.1`，镜像构建时用 `patch-opencli.mjs` 打了补丁使其支持环境变量覆盖。
+
+在 TUI 里对 opencode 说：
+> 用 opencli 打开知乎，读取首页前 10 条标题
+
+AI 会执行 `opencli browser default open <url>` + `opencli browser default state`，操作落在你宿主机已登录的 Chrome 上。
+
+> ⚠️ **补丁维护**：opencli 升级后 `npm i -g` 会覆盖补丁文件，需重新构建镜像（Dockerfile 会自动重打补丁）。若改了 `OPENCLI_VERSION`，记得同步升级宿主机 opencli 到同版本。
+
 ### 模型配置
 
 `opencode.json` 用 **openai-compatible provider 直连**智谱 coding 端点（`https://open.bigmodel.cn/api/coding/paas/v4`），API Key 通过环境变量 `ZHIPU_API_KEY` 注入。切换默认模型改 `"model"` 字段。
@@ -132,6 +152,8 @@ launchctl setenv OLLAMA_HOST 0.0.0.0:11434
 | `~/.gitconfig`/`~/.ssh` 不存在导致启动失败 | 注释掉 compose 里对应挂载行 |
 | draw 技能「无法连接 Ollama」 | 宿主 Ollama 未启动或未监听 `0.0.0.0:11434` |
 | `permission ... external_directory` 拒绝 | opencode 禁止写工作目录外；用 `/workspace/output/` 而非 `~` |
+| opencli `Daemon: not running` | 宿主机 daemon 未启动；宿主执行 `opencli doctor` 触发 |
+| opencli `Extension: not connected` | Chrome 扩展未启用，或宿主 opencli 版本与容器不一致 |
 | 构建时 apt 报 GPG signature 错误 | Docker Desktop on arm64 + Debian 已知问题；本仓库用 alpine 规避 |
 
 ## 网络加速（中国大陆）

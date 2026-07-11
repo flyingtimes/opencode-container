@@ -19,6 +19,17 @@ RUN apk add --no-cache \
 RUN npm config set registry https://registry.npmmirror.com \
  && npm i -g opencode-ai@latest
 
+# 安装 opencli CLI（控制宿主机已登录的浏览器）
+# 版本须与宿主机 opencli 一致，否则命令/协议可能不兼容
+ARG OPENCLI_VERSION=1.8.6
+RUN npm i -g @jackwener/opencli@${OPENCLI_VERSION}
+
+# 补丁：让 opencli 的 daemon 地址可经 OPENCLI_DAEMON_HOST 环境变量覆盖
+# 原因：opencli 硬编码连 127.0.0.1:19825，容器里需指向宿主 host.docker.internal
+# 不设该变量时回退 127.0.0.1，本地直跑不受影响；opencli 升级后需重新打此补丁
+COPY patch-opencli.mjs /tmp/patch-opencli.mjs
+RUN node /tmp/patch-opencli.mjs && rm /tmp/patch-opencli.mjs
+
 # 安装常用 Python 包（使用国内 PyPI 镜像加速）
 # 可按需增删；如需系统级隔离，建议进容器后用 `python -m venv`
 RUN pip install --no-cache-dir --break-system-packages \
@@ -31,6 +42,7 @@ RUN pip install --no-cache-dir --break-system-packages \
 
 # 构建期校验
 RUN opencode --version \
+ && opencli --version \
  && python --version \
  && pip --version
 

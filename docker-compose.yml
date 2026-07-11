@@ -11,8 +11,9 @@ services:
     volumes:
       # 待操作的代码目录（挂载本仓库根目录到容器 /workspace，opencode.json 也在其中）
       - ./opencode.json:/workspace/.opencode/opencode.json
+      - ./AGENTS.md:/workspace/AGENTS.md
       - ./skills:/workspace/.opencode/skills
-      - ./output:/workspace/output
+      - ./storage:/workspace/storage
       # opencode 自身的配置/会话/鉴权数据，避免每次重建丢失
       - ./opencode-data:/root/.local/share/opencode
 
@@ -30,6 +31,9 @@ services:
       # draw 技能访问宿主 Ollama 的地址（Docker Desktop 自带 host.docker.internal；
       # Linux 需靠下方 extra_hosts 映射）。改 OLLAMA_HOST 可指向任意 Ollama 实例。
       OLLAMA_HOST: ${OLLAMA_HOST:-host.docker.internal}
+      # opencli 连接宿主机 daemon 的地址（容器内 127.0.0.1 指向自身，需指向宿主）
+      # 宿主机须运行 opencli daemon + 启用 Browser Bridge 扩展
+      OPENCLI_DAEMON_HOST: ${OPENCLI_DAEMON_HOST:-host.docker.internal}
 
     # 确保容器能解析宿主：macOS/Windows 的 Docker Desktop 已内置 host.docker.internal，
     # Linux 下 extra_hosts 兜底（host-gateway 解析为宿主网关 IP）。

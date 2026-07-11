@@ -6,6 +6,11 @@
 opencode-data/
 # 生成的图片等输出
 output/
+# 容器运行时存储（生成的文件）
+storage/
+
+# ===== 工具临时文件 =====
+.zcode/
 
 # ===== Python 缓存 =====
 __pycache__/
