@@ -1,0 +1,23 @@
+{
+  "skill_name": "zlib",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我搜索并下载agent-skills橙皮书",
+      "expected_output": "成功从 Z-Library 搜索并下载agent-skills橙皮书相关的电子书文件，返回下载文件的完整路径",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我想找一本关于 Python 编程的电子书",
+      "expected_output": "在 Z-Library 搜索 Python 编程相关的书籍，下载第一个结果，返回文件路径",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "从 zlib 下载《活着》余华著",
+      "expected_output": "成功搜索并下载《活着》这本书，返回下载文件路径",
+      "files": []
+    }
+  ]
+}

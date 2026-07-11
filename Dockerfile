@@ -13,7 +13,8 @@ RUN apk add --no-cache \
       nodejs \
       npm \
       build-base \
-      linux-headers
+      linux-headers \
+      bash
 
 # 安装 opencode CLI（使用国内 npm 镜像加速）
 RUN npm config set registry https://registry.npmmirror.com \

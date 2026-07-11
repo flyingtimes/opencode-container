@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenCode 配置管理</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface-2: #222632;
+  --surface-3: #2a2f3d;
+  --border: #353a48;
+  --text: #e4e7ee;
+  --text-dim: #8b92a5;
+  --text-muted: #5c6275;
+  --primary: #6c8eef;
+  --primary-dim: #4a6bc9;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --accent-purple: #a78bfa;
+  --accent-cyan: #22d3ee;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+}
+[data-theme="light"] {
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --surface-2: #f0f1f5;
+  --surface-3: #e7e9ef;
+  --border: #d4d8e2;
+  --text: #1a1d27;
+  --text-dim: #5c6275;
+  --text-muted: #8b92a5;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ===== 顶栏 ===== */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex; align-items: center; gap: 16px;
+  box-shadow: var(--shadow);
+}
+.topbar .logo { font-size: 18px; font-weight: 700; white-space: nowrap; }
+.topbar .logo span { color: var(--primary); }
+.topbar .actions { margin-left: auto; display: flex; gap: 8px; }
+.topbar .status {
+  font-size: 12px; color: var(--text-muted);
+  font-family: var(--mono);
+  padding: 4px 10px; border-radius: 20px;
+  background: var(--surface-2);
+}
+
+/* ===== 按钮 ===== */
+.btn {
+  padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  font-family: inherit;
+}
+.btn:hover { background: var(--surface-3); border-color: var(--text-muted); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dim); }
+.btn-success { background: var(--success); border-color: var(--success); color: #0a1f0e; }
+.btn-ghost { background: transparent; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-icon { padding: 8px; width: 34px; justify-content: center; }
+
+/* ===== 布局 ===== */
+.layout { display: flex; min-height: calc(100vh - 61px); }
+.sidebar {
+  width: 240px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 12px;
+  position: sticky; top: 61px;
+  height: calc(100vh - 61px);
+  overflow-y: auto;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 8px;
+  cursor: pointer; color: var(--text-dim);
+  font-size: 13px; font-weight: 500;
+  transition: all 0.15s; margin-bottom: 2px;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--primary); color: #fff; }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-section-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); padding: 16px 14px 8px; font-weight: 600;
+}
+
+.main { flex: 1; padding: 32px 40px; max-width: 960px; overflow-x: hidden; }
+.section { display: none; animation: fadeIn 0.2s ease; }
+.section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.section-header { margin-bottom: 24px; }
+.section-header h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.section-header p { color: var(--text-dim); font-size: 13px; }
+
+/* ===== 卡片 ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.card-header h3 { font-size: 16px; font-weight: 600; flex: 1; }
+.card-header .badge {
+  font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600;
+}
+.badge-success { background: rgba(74,222,128,0.15); color: var(--success); }
+.badge-warning { background: rgba(251,191,36,0.15); color: var(--warning); }
+.badge-info { background: rgba(108,142,239,0.15); color: var(--primary); }
+.badge-purple { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
+.badge-cyan { background: rgba(34,211,238,0.15); color: var(--accent-cyan); }
+.badge-danger { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+/* ===== 表单 ===== */
+.field { margin-bottom: 16px; }
+.field:last-child { margin-bottom: 0; }
+.field-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; margin-bottom: 6px;
+}
+.field-label .hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.field-label .mono-tag {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--surface-3); padding: 2px 6px; border-radius: 4px;
+  color: var(--accent-cyan);
+}
+.input, textarea.input, select.input {
+  width: 100%; padding: 10px 14px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 13px;
+  font-family: inherit; transition: border-color 0.15s;
+}
+.input.mono { font-family: var(--mono); font-size: 12px; }
+.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,142,239,0.15); }
+textarea.input { resize: vertical; min-height: 80px; line-height: 1.5; }
+select.input { cursor: pointer; }
+.field-desc { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+/* toggle 开关 */
+.toggle { position: relative; display: inline-block; width: 42px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle .slider {
+  position: absolute; inset: 0; background: var(--surface-3);
+  border-radius: 24px; cursor: pointer; transition: 0.2s;
+}
+.toggle .slider:before {
+  content: ''; position: absolute; height: 18px; width: 18px;
+  left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.2s;
+}
+.toggle input:checked + .slider { background: var(--success); }
+.toggle input:checked + .slider:before { transform: translateX(18px); }
+.toggle-row { display: flex; align-items: center; gap: 12px; }
+.toggle-row .toggle-label { font-size: 13px; }
+
+/* ===== 模型表格 ===== */
+.models-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.model-chip {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; cursor: pointer;
+  transition: all 0.15s;
+}
+.model-chip:hover { border-color: var(--primary); }
+.model-chip.selected { border-color: var(--primary); background: rgba(108,142,239,0.08); }
+.model-chip .model-id { font-family: var(--mono); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.model-chip .model-name { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.model-chip .model-flags { display: flex; gap: 4px; flex-wrap: wrap; }
+.model-flag {
+  font-size: 10px; padding: 2px 6px; border-radius: 4px;
+  background: var(--surface-3); color: var(--text-muted);
+}
+.model-flag.on { color: var(--success); background: rgba(74,222,128,0.1); }
+
+/* ===== Skill 卡片 ===== */
+.skill-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.skill-card .skill-head {
+  padding: 18px 24px; display: flex; align-items: center; gap: 14px;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.skill-card .skill-head .skill-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.skill-card .skill-head .skill-info { flex: 1; min-width: 0; }
+.skill-card .skill-head .skill-name { font-size: 15px; font-weight: 600; }
+.skill-card .skill-head .skill-desc {
+  font-size: 12px; color: var(--text-dim); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.skill-card .skill-body { padding: 20px 24px; display: none; }
+.skill-card.expanded .skill-body { display: block; }
+.skill-card .skill-expand { color: var(--text-muted); transition: transform 0.2s; }
+.skill-card.expanded .skill-expand { transform: rotate(90deg); }
+
+/* ===== Toast ===== */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 18px; font-size: 13px;
+  box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px;
+  animation: slideIn 0.2s ease; min-width: 240px;
+}
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--danger); }
+.toast.info { border-color: var(--primary); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ===== 代码预览 ===== */
+.code-preview {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; font-family: var(--mono);
+  font-size: 12px; line-height: 1.6; overflow-x: auto;
+  max-height: 400px; overflow-y: auto; white-space: pre;
+  color: var(--text-dim);
+}
+.code-preview .json-key { color: var(--accent-cyan); }
+.code-preview .json-str { color: var(--success); }
+.code-preview .json-bool { color: var(--warning); }
+.code-preview .json-num { color: var(--accent-purple); }
+
+/* ===== 备份列表 ===== */
+.backup-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--surface-2);
+  border-radius: 8px; margin-bottom: 8px;
+}
+.backup-item .backup-time { font-family: var(--mono); font-size: 12px; color: var(--text-dim); flex: 1; }
+.backup-item .backup-size { font-size: 11px; color: var(--text-muted); }
+
+/* ===== 空状态 ===== */
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 200; display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; width: 90%; max-width: 480px;
+  box-shadow: var(--shadow);
+}
+.modal h3 { font-size: 18px; margin-bottom: 8px; }
+.modal p { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+.modal .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ===== 环境变量表格 ===== */
+.env-table { width: 100%; border-collapse: collapse; }
+.env-table th {
+  text-align: left; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted);
+  padding: 8px 12px; border-bottom: 1px solid var(--border); font-weight: 600;
+}
+.env-table td { padding: 10px 12px; border-bottom: 1px solid var(--surface-3); font-size: 13px; }
+.env-table tr:last-child td { border-bottom: none; }
+.env-table .env-key { font-family: var(--mono); color: var(--accent-cyan); }
+.env-table .env-value { font-family: var(--mono); color: var(--text-dim); }
+.env-table .env-source { font-size: 11px; color: var(--text-muted); }
+
+/* ===== 统计 ===== */
+.stats-row { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 22px; flex: 1; min-width: 140px;
+}
+.stat-card .stat-value { font-size: 28px; font-weight: 700; }
+.stat-card .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.stat-card .stat-icon { font-size: 20px; margin-bottom: 8px; opacity: 0.7; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 顶栏 ===== -->
+<div class="topbar">
+  <div class="logo">⚡ <span>OpenCode</span> 配置管理</div>
+  <span class="status" id="dirtyStatus">就绪</span>
+  <div class="actions">
+    <button class="btn btn-sm btn-ghost" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    <button class="btn btn-sm" onclick="exportAll()">📦 导出全部备份</button>
+    <button class="btn btn-sm btn-primary" onclick="saveAll()">💾 保存配置</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ===== 侧栏 ===== -->
+  <nav class="sidebar">
+    <div class="nav-section-title">核心配置</div>
+    <a class="nav-item active" data-section="overview"><span class="icon">📊</span> 概览</a>
+    <a class="nav-item" data-section="provider"><span class="icon">🤖</span> 模型提供商</a>
+    <a class="nav-item" data-section="models"><span class="icon">🎯</span> 模型选择</a>
+    <a class="nav-item" data-section="mcp"><span class="icon">🔌</span> MCP 服务</a>
+    <div class="nav-section-title">环境与运行时</div>
+    <a class="nav-item" data-section="env"><span class="icon">🔑</span> 环境变量</a>
+    <a class="nav-item" data-section="docker"><span class="icon">🐳</span> Docker 配置</a>
+    <div class="nav-section-title">技能与指令</div>
+    <a class="nav-item" data-section="skills"><span class="icon">⚡</span> 技能 Skills</a>
+    <a class="nav-item" data-section="agents"><span class="icon">📋</span> 项目指令</a>
+    <div class="nav-section-title">工具</div>
+    <a class="nav-item" data-section="backup"><span class="icon">🗄️</span> 备份与恢复</a>
+    <a class="nav-item" data-section="raw"><span class="icon">📝</span> 原始编辑</a>
+  </nav>
+
+  <!-- ===== 主区 ===== -->
+  <main class="main">
+
+    <!-- ========== 概览 ========== -->
+    <div class="section active" id="sec-overview">
+      <div class="section-header">
+        <h2>📊 配置概览</h2>
+        <p>当前 OpenCode 容器化部署的配置全貌</p>
+      </div>
+      <div class="stats-row" id="statsRow"></div>
+      <div class="card">
+        <div class="card-header"><h3>📁 配置文件状态</h3></div>
+        <div id="filesList"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>⚡ 快捷操作</h3></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="navTo('provider')">编辑模型提供商</button>
+          <button class="btn" onclick="navTo('models')">切换默认模型</button>
+          <button class="btn" onclick="navTo('env')">修改环境变量</button>
+          <button class="btn" onclick="exportAll()">导出完整备份</button>
+          <button class="btn" onclick="navTo('raw')">原始 JSON 编辑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 模型提供商 ========== -->
+    <div class="section" id="sec-provider">
+      <div class="section-header">
+        <h2>🤖 模型提供商</h2>
+        <p>配置 LLM 服务商连接 — 当前使用智谱 GLM Coding Plan</p>
+      </div>
+      <div id="providerList"></div>
+    </div>
+
+    <!-- ========== 模型选择 ========== -->
+    <div class="section" id="sec-models">
+      <div class="section-header">
+        <h2>🎯 模型选择</h2>
+        <p>选择默认主力模型与轻量模型</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>主力模型 <span class="badge badge-info">model</span></h3></div>
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px">用于 build 模式的主力模型，承担主要编码任务</p>
+        <div class="models-grid" id="modelGridMain"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>轻量模型 <span class="badge badge-purple">small_model</span></h3></div>
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px">用于辅助任务（如摘要、简单查询），推荐选轻量模型</p>
+        <div class="models-grid" id="modelGridSmall"></div>
+      </div>
+    </div>
+
+    <!-- ========== MCP 服务 ========== -->
+    <div class="section" id="sec-mcp">
+      <div class="section-header">
+        <h2>🔌 MCP 服务</h2>
+        <p>Model Context Protocol 服务端配置</p>
+      </div>
+      <div id="mcpList"></div>
+      <div class="card" style="border-style:dashed">
+        <div class="card-header">
+          <h3 style="color:var(--text-dim)">➕ 添加 MCP 服务</h3>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="addMcpServer('local')">local (本地命令)</button>
+          <button class="btn btn-sm" onclick="addMcpServer('remote')">remote (远程 URL)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 环境变量 ========== -->
+    <div class="section" id="sec-env">
+      <div class="section-header">
+        <h2>🔑 环境变量</h2>
+        <p>从 .env 和 docker-compose.yml 解析的运行时变量</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>🔐 密钥配置</h3>
+          <span class="badge badge-danger">敏感</span>
+        </div>
+        <div id="envSecrets"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>⚙️ 运行时变量</h3></div>
+        <div id="envRuntime"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>👤 Git 身份</h3></div>
+        <div id="envGit"></div>
+      </div>
+    </div>
+
+    <!-- ========== Docker 配置 ========== -->
+    <div class="section" id="sec-docker">
+      <div class="section-header">
+        <h2>🐳 Docker 运行配置</h2>
+        <p>容器运行参数（映射 docker-compose.yml）</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>容器基本</h3></div>
+        <div class="field">
+          <div class="field-label">容器名称 <span class="mono-tag">container_name</span></div>
+          <input class="input" id="dContainerName" oninput="markDirty()">
+        </div>
+        <div class="field">
+          <div class="field-label">工作目录 <span class="mono-tag">working_dir</span></div>
+          <input class="input mono" id="dWorkDir" oninput="markDirty()">
+        </div>
+        <div class="toggle-row" style="margin-bottom:16px">
+          <label class="toggle"><input type="checkbox" id="dTty" onchange="markDirty()"><span class="slider"></span></label>
+          <span class="toggle-label">TTY + stdin_open（TUI 程序必须开启）</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" id="dRestart" onchange="markDirty()"><span class="slider"></span></label>
+          <span class="toggle-label">restart 自动重启（TUI 不建议开启）</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>挂载卷</h3></div>
+        <div id="dVolumes"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>主机映射</h3></div>
+        <div class="field">
+          <div class="field-label">extra_hosts <span class="hint">Linux 下用于解析宿主机</span></div>
+          <input class="input mono" id="dExtraHosts" oninput="markDirty()">
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 技能 ========== -->
+    <div class="section" id="sec-skills">
+      <div class="section-header">
+        <h2>⚡ 技能 Skills</h2>
+        <p>动态解析 skills/ 目录下的所有技能配置</p>
+      </div>
+      <div style="margin-bottom:16px;display:flex;gap:8px">
+        <label class="btn btn-sm">
+          📂 加载 skills 目录
+          <input type="file" id="skillFileInput" webkitdirectory multiple style="display:none" onchange="loadSkillsFromDir(this)">
+        </label>
+        <button class="btn btn-sm" onclick="loadDefaultSkills()">🔄 加载内置技能</button>
+      </div>
+      <div id="skillList">
+        <div class="empty-state">
+          <div class="empty-icon">⚡</div>
+          <p>点击上方按钮加载技能配置</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 项目指令 ========== -->
+    <div class="section" id="sec-agents">
+      <div class="section-header">
+        <h2>📋 项目指令 (AGENTS.md)</h2>
+        <p>项目级指令，自动追加到 opencode 系统提示词</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>脚本偏好</h3></div>
+        <div class="field">
+          <div class="field-label">创建脚本的语言</div>
+          <select class="input" id="agentScriptLang" onchange="updateAgents()">
+            <option value="python">Python</option>
+            <option value="node">Node.js</option>
+            <option value="bash">Bash</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>目录偏好</h3></div>
+        <div class="field">
+          <div class="field-label">脚本存放目录 <span class="mono-tag">scripts</span></div>
+          <input class="input mono" id="agentScriptDir" oninput="updateAgents()">
+        </div>
+        <div class="field">
+          <div class="field-label">结果输出目录 <span class="mono-tag">output</span></div>
+          <input class="input mono" id="agentOutputDir" oninput="updateAgents()">
+        </div>
+        <div class="field">
+          <div class="field-label">其他文件目录 <span class="mono-tag">storage</span></div>
+          <input class="input mono" id="agentStorageDir" oninput="updateAgents()">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>原始 AGENTS.md</h3></div>
+        <textarea class="input mono" id="agentRaw" style="min-height:200px" oninput="markDirty()"></textarea>
+      </div>
+    </div>
+
+    <!-- ========== 备份 ========== -->
+    <div class="section" id="sec-backup">
+      <div class="section-header">
+        <h2>🗄️ 备份与恢复</h2>
+        <p>配置自动保存到浏览器本地存储，可随时恢复</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>操作</h3></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="btn btn-primary" onclick="createBackup()">📸 创建快照</button>
+          <button class="btn" onclick="exportAll()">📦 导出全部 (ZIP 方式 JSON)</button>
+          <label class="btn">
+            📥 导入配置
+            <input type="file" id="importInput" accept=".json" style="display:none" onchange="importConfig(this)">
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>历史快照</h3>
+          <span class="badge badge-info" id="backupCount">0</span>
+        </div>
+        <div id="backupList"></div>
+      </div>
+    </div>
+
+    <!-- ========== 原始编辑 ========== -->
+    <div class="section" id="sec-raw">
+      <div class="section-header">
+        <h2>📝 原始配置编辑</h2>
+        <p>直接编辑 opencode.json 源文件（高级用户）</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>opencode.json</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="syncRawToForm()">↧ 应用到表单</button>
+            <button class="btn btn-sm" onclick="syncFormToRaw()">↥ 从表单同步</button>
+          </div>
+        </div>
+        <textarea class="input mono" id="rawEditor" style="min-height:420px;font-size:12px" oninput="markDirty()"></textarea>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-sm btn-success" onclick="downloadFile('opencode.json', document.getElementById('rawEditor').value)">⬇ 下载 opencode.json</button>
+          <button class="btn btn-sm" onclick="validateRaw()">✓ 校验 JSON</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>.env</h3></div>
+        <textarea class="input mono" id="rawEnv" style="min-height:120px" oninput="markDirty()"></textarea>
+        <button class="btn btn-sm btn-success" style="margin-top:12px" onclick="downloadFile('.env', document.getElementById('rawEnv').value)">⬇ 下载 .env</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>docker-compose.yml</h3></div>
+        <textarea class="input mono" id="rawCompose" style="min-height:300px" oninput="markDirty()"></textarea>
+        <button class="btn btn-sm btn-success" style="margin-top:12px" onclick="downloadFile('docker-compose.yml', document.getElementById('rawCompose').value)">⬇ 下载 docker-compose.yml</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- 确认 Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3 id="confirmTitle">确认</h3>
+    <p id="confirmMsg"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="confirmOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 默认配置数据（精确还原当前项目的所有配置项）
+// ============================================================
+const DEFAULT_CONFIG = {
+  opencode: {
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+      "zai-mcp-server": {
+        "type": "local",
+        "command": ["npx", "-y", "@z_ai/mcp-server"],
+        "environment": {
+          "Z_AI_API_KEY": "{env:ZHIPU_API_KEY}",
+          "Z_AI_MODE": "ZHIPU",
+          "Z_AI_BASE_URL": "https://open.bigmodel.cn/api/coding/paas/v4/"
+        },
+        "enabled": true
+      }
+    },
+    "provider": {
+      "zhipu": {
+        "npm": "@ai-sdk/openai-compatible",
+        "name": "智谱 GLM Coding Plan",
+        "api": "OpenAI Compatible",
+        "options": { "baseURL": "https://open.bigmodel.cn/api/coding/paas/v4" },
+        "env": ["ZHIPU_API_KEY"],
+        "models": {
+          "GLM-5.2": { "name": "GLM-5.2 (主力，推荐)", "tool_call": true, "reasoning": true, "attachment": true },
+          "GLM-5-Turbo": { "name": "GLM-5-Turbo 旗舰", "tool_call": true, "reasoning": true, "attachment": true },
+          "GLM-4.7": { "name": "GLM-4.7 轻量", "tool_call": true, "reasoning": true, "attachment": true }
+        }
+      }
+    },
+    "model": "zhipu/GLM-5.2",
+    "small_model": "zhipu/GLM-4.7"
+  },
+  env: {
+    secrets: { "ZHIPU_API_KEY": "" },
+    runtime: {
+      "OLLAMA_HOST": "host.docker.internal",
+      "OPENCLI_DAEMON_HOST": "host.docker.internal",
+      "BUN_RUNTIME_TRANSPILER_CACHE_PATH": "0"
+    },
+    git: {
+      "GIT_AUTHOR_NAME": "dev",
+      "GIT_AUTHOR_EMAIL": "dev@example.com",
+      "GIT_COMMITTER_NAME": "dev",
+      "GIT_COMMITTER_EMAIL": "dev@example.com"
+    }
+  },
+  docker: {
+    containerName: "opencode",
+    workDir: "/workspace",
+    tty: true,
+    restart: false,
+    extraHosts: "host.docker.internal:host-gateway",
+    volumes: [
+      { host: "./opencode.json", container: "/workspace/.opencode/opencode.json", desc: "主配置" },
+      { host: "./AGENTS.md", container: "/workspace/AGENTS.md", desc: "项目指令" },
+      { host: "./skills", container: "/workspace/.opencode/skills", desc: "技能目录" },
+      { host: "./storage", container: "/workspace/storage", desc: "运行时存储" },
+      { host: "./opencode-data", container: "/root/.local/share/opencode", desc: "会话数据" }
+    ]
+  },
+  agents: `# 脚本创建偏好
+尽量使用python创建执行脚本
+
+# 目录偏好
+
+## Agent运行中所使用的各类文件都存放在/workspace/storage/中
+Agent运行中创建的临时可执行脚本，存放在/workspace/storage/scripts/
+Agent运行中生成的结果文件，存放在/workspace/storage/output/
+Agent运行中创建的其他文件存放在/workspace/storage/`,
+  skills: [
+    {
+      name: "draw",
+      icon: "🎨",
+      iconBg: "rgba(167,139,250,0.15)",
+      iconColor: "#a78bfa",
+      description: "Ollama 多媒体技能：x/z-image-turbo 图片生成 + Qwen3.6 Vision 图片分析。当用户要求画画、生成图片、AI绘图、绘制插图、做配图、批量生成文章配图，或要求分析图片内容、描述图片、看图说话、识别图中文字时触发。依赖宿主机运行的 Ollama（通过 host.docker.internal 访问）。",
+      allowedTools: null,
+      files: ["SKILL.md", "scripts/draw.py", "scripts/vision.py", "references/article-illustration.md"]
+    },
+    {
+      name: "guizang-ppt-skill",
+      icon: "📊",
+      iconBg: "rgba(34,211,238,0.15)",
+      iconColor: "#22d3ee",
+      description: '生成横向翻页网页 PPT（单 HTML 文件），含 WebGL 背景、章节幕封、数据大字报、图片网格等模板。提供两种风格：① "电子杂志 × 电子墨水"（衬线 + 流体背景 + 暖色） ② "瑞士国际主义"（无衬线 + 网格点阵 + IKB/柠檬黄/柠檬绿/安全橙高亮）。',
+      allowedTools: null,
+      files: ["SKILL.md", "assets/template.html", "assets/template-swiss.html", "assets/motion.min.js", "references/*.md"]
+    },
+    {
+      name: "opencli-browser",
+      icon: "🌐",
+      iconBg: "rgba(74,222,128,0.15)",
+      iconColor: "#4ade80",
+      description: "Use when an agent needs to drive a real Chrome window via opencli — inspect a page, fill forms, click through logged-in flows, or extract data ad-hoc. Covers the selector-first target contract, compound form fields, stale-ref handling, network capture, and the agent-native envelopes the CLI returns.",
+      allowedTools: "Bash(opencli:*), Read, Edit, Write",
+      files: ["SKILL.md"]
+    }
+  ]
+};
+
+// 运行时状态
+let state = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); // 深拷贝
+let dirty = false;
+let confirmCallback = null;
+
+// ============================================================
+// 导航
+// ============================================================
+function navTo(section) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + section).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${section}"]`).classList.add('active');
+  if (section === 'raw') syncFormToRaw();
+}
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => navTo(item.dataset.section));
+});
+
+// ============================================================
+// 渲染：概览
+// ============================================================
+function renderOverview() {
+  const oc = state.opencode;
+  const providerCount = Object.keys(oc.provider || {}).length;
+  const modelCount = Object.values(oc.provider || {}).reduce((n, p) => n + Object.keys(p.models || {}).length, 0);
+  const mcpCount = Object.keys(oc.mcp || {}).length;
+  const skillCount = state.skills.length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">🤖</div><div class="stat-value">${providerCount}</div><div class="stat-label">模型提供商</div></div>
+    <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-value">${modelCount}</div><div class="stat-label">可用模型</div></div>
+    <div class="stat-card"><div class="stat-icon">🔌</div><div class="stat-value">${mcpCount}</div><div class="stat-label">MCP 服务</div></div>
+    <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value">${skillCount}</div><div class="stat-label">已装技能</div></div>
+  `;
+
+  document.getElementById('filesList').innerHTML = `
+    <table class="env-table">
+      <tr><td>📄 opencode.json</td><td>主配置（provider/MCP/模型）</td><td><span class="badge badge-success">已配置</span></td></tr>
+      <tr><td>📄 .env</td><td>API Key + 运行时变量</td><td><span class="badge ${state.env.secrets.ZHIPU_API_KEY ? 'badge-success' : 'badge-warning'}">${state.env.secrets.ZHIPU_API_KEY ? '已填写' : '未填写'}</span></td></tr>
+      <tr><td>📄 docker-compose.yml</td><td>容器运行配置</td><td><span class="badge badge-success">已配置</span></td></tr>
+      <tr><td>📄 AGENTS.md</td><td>项目指令</td><td><span class="badge badge-success">${state.agents ? '已配置' : '空'}</span></td></tr>
+      <tr><td>📁 skills/</td><td>${skillCount} 个技能</td><td><span class="badge badge-info">${skillCount} loaded</span></td></tr>
+    </table>
+  `;
+}
+
+// ============================================================
+// 渲染：模型提供商
+// ============================================================
+function renderProviders() {
+  const list = document.getElementById('providerList');
+  const providers = state.opencode.provider || {};
+  list.innerHTML = Object.entries(providers).map(([pid, p]) => `
+    <div class="card">
+      <div class="card-header">
+        <h3>${p.name || pid}</h3>
+        <span class="badge badge-info">${pid}</span>
+        <span class="badge badge-purple">${p.api || p.npm}</span>
+      </div>
+      <div class="field">
+        <div class="field-label">显示名称 <span class="mono-tag">name</span></div>
+        <input class="input" value="${p.name || ''}" onchange="updateProvider('${pid}','name',this.value)">
+      </div>
+      <div class="field">
+        <div class="field-label">npm 包 <span class="mono-tag">npm</span></div>
+        <input class="input mono" value="${p.npm || ''}" onchange="updateProvider('${pid}','npm',this.value)">
+      </div>
+      <div class="field">
+        <div class="field-label">API 类型 <span class="mono-tag">api</span></div>
+        <input class="input mono" value="${p.api || ''}" onchange="updateProvider('${pid}','api',this.value)">
+      </div>
+      <div class="field">
+        <div class="field-label">Base URL <span class="mono-tag">options.baseURL</span></div>
+        <input class="input mono" value="${p.options?.baseURL || ''}" onchange="updateProviderOpt('${pid}','baseURL',this.value)">
+        <div class="field-desc">智谱 Coding Plan 专用端点：<code>coding/paas/v4</code>（走套餐额度）</div>
+      </div>
+      <div class="field">
+        <div class="field-label">环境变量引用 <span class="mono-tag">env</span></div>
+        <input class="input mono" value="${(p.env || []).join(', ')}" onchange="updateProviderEnv('${pid}',this.value)">
+        <div class="field-desc">声明此 provider 读取的环境变量名（逗号分隔）</div>
+      </div>
+      <div class="field">
+        <div class="field-label">模型列表 <span class="mono-tag">models</span></div>
+        <div class="models-grid">
+          ${Object.entries(p.models || {}).map(([mid, m]) => `
+            <div class="model-chip">
+              <div class="model-id">${mid}</div>
+              <div class="model-name">${m.name || ''}</div>
+              <div class="model-flags">
+                ${m.tool_call ? '<span class="model-flag on">🔧 tool_call</span>' : '<span class="model-flag">🔧 tool_call</span>'}
+                ${m.reasoning ? '<span class="model-flag on">🧠 reasoning</span>' : '<span class="model-flag">🧠 reasoning</span>'}
+                ${m.attachment ? '<span class="model-flag on">📎 attachment</span>' : '<span class="model-flag">📎 attachment</span>'}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-sm btn-danger" onclick="removeProvider('${pid}')">🗑 删除此提供商</button>
+      </div>
+    </div>
+  `).join('') || '<div class="empty-state"><div class="empty-icon">🤖</div><p>未配置任何模型提供商</p></div>';
+}
+
+function updateProvider(pid, key, val) { state.opencode.provider[pid][key] = val; markDirty(); }
+function updateProviderOpt(pid, key, val) {
+  if (!state.opencode.provider[pid].options) state.opencode.provider[pid].options = {};
+  state.opencode.provider[pid].options[key] = val; markDirty();
+}
+function updateProviderEnv(pid, val) {
+  state.opencode.provider[pid].env = val.split(',').map(s => s.trim()).filter(Boolean); markDirty();
+}
+function removeProvider(pid) {
+  confirmDialog('删除提供商', `确定删除提供商 "${pid}"？此操作不可撤销。`, () => {
+    delete state.opencode.provider[pid]; markDirty(); renderProviders(); toast('已删除', 'success');
+  });
+}
+
+// ============================================================
+// 渲染：模型选择
+// ============================================================
+function renderModels() {
+  const models = [];
+  Object.entries(state.opencode.provider || {}).forEach(([pid, p]) => {
+    Object.entries(p.models || {}).forEach(([mid, m]) => {
+      models.push({ id: `${pid}/${mid}`, mid, name: m.name || mid, flags: m });
+    });
+  });
+
+  ['Main', 'Small'].forEach((which, idx) => {
+    const key = idx === 0 ? 'model' : 'small_model';
+    const current = state.opencode[key];
+    document.getElementById('modelGrid' + which).innerHTML = models.map(m => `
+      <div class="model-chip ${current === m.id ? 'selected' : ''}" onclick="selectModel('${key}','${m.id}')">
+        <div class="model-id">${m.mid}</div>
+        <div class="model-name">${m.name}</div>
+        <div class="model-flags">
+          ${m.flags.tool_call ? '<span class="model-flag on">🔧</span>' : ''}
+          ${m.flags.reasoning ? '<span class="model-flag on">🧠</span>' : ''}
+          ${m.flags.attachment ? '<span class="model-flag on">📎</span>' : ''}
+        </div>
+        ${current === m.id ? '<div style="font-size:11px;color:var(--success);margin-top:6px">✓ 已选择</div>' : ''}
+      </div>
+    `).join('') || '<div class="empty-state">无可用模型</div>';
+  });
+}
+
+function selectModel(key, id) { state.opencode[key] = id; markDirty(); renderModels(); toast(`已切换: ${key} = ${id}`, 'success'); }
+
+// ============================================================
+// 渲染：MCP
+// ============================================================
+function renderMcp() {
+  const list = document.getElementById('mcpList');
+  const mcps = state.opencode.mcp || {};
+  list.innerHTML = Object.entries(mcps).map(([mid, m]) => `
+    <div class="card">
+      <div class="card-header">
+        <h3>${mid}</h3>
+        <span class="badge badge-${m.type === 'remote' ? 'cyan' : 'purple'}">${m.type}</span>
+        ${m.enabled ? '<span class="badge badge-success">启用</span>' : '<span class="badge badge-warning">禁用</span>'}
+      </div>
+      ${m.type === 'local' ? `
+        <div class="field">
+          <div class="field-label">启动命令 <span class="mono-tag">command</span></div>
+          <input class="input mono" value="${(m.command || []).join(' ')}" onchange="updateMcp('${mid}','command',this.value.split(' '))">
+        </div>
+      ` : `
+        <div class="field">
+          <div class="field-label">远程 URL <span class="mono-tag">url</span></div>
+          <input class="input mono" value="${m.url || ''}" onchange="updateMcp('${mid}','url',this.value)">
+        </div>
+      `}
+      <div class="field">
+        <div class="field-label">环境变量 <span class="mono-tag">environment</span></div>
+        <textarea class="input mono" style="min-height:90px" onchange="updateMcpEnv('${mid}',this.value)">${Object.entries(m.environment || {}).map(([k,v]) => `${k}=${v}`).join('\n')}</textarea>
+        <div class="field-desc">每行一个，格式 KEY=VALUE。支持 <code>{env:VAR}</code> 插值</div>
+      </div>
+      <div class="toggle-row" style="margin-top:12px">
+        <label class="toggle"><input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="updateMcp('${mid}','enabled',this.checked)"><span class="slider"></span></label>
+        <span class="toggle-label">启用此 MCP 服务</span>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-sm btn-danger" onclick="removeMcp('${mid}')">🗑 删除</button>
+      </div>
+    </div>
+  `).join('') || '<div class="empty-state"><div class="empty-icon">🔌</div><p>未配置 MCP 服务</p></div>';
+}
+
+function updateMcp(mid, key, val) { state.opencode.mcp[mid][key] = val; markDirty(); renderMcp(); }
+function updateMcpEnv(mid, val) {
+  const env = {};
+  val.split('\n').forEach(line => {
+    const i = line.indexOf('=');
+    if (i > 0) env[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+  });
+  state.opencode.mcp[mid].environment = env; markDirty();
+}
+function addMcpServer(type) {
+  const name = 'mcp-' + Date.now().toString(36);
+  state.opencode.mcp[name] = type === 'remote'
+    ? { type: 'remote', url: 'https://', enabled: true }
+    : { type: 'local', command: ['npx', '-y', 'package-name'], enabled: true, environment: {} };
+  markDirty(); renderMcp(); toast(`已添加 ${type} MCP 服务`, 'success');
+}
+function removeMcp(mid) {
+  confirmDialog('删除 MCP', `确定删除 "${mid}"？`, () => {
+    delete state.opencode.mcp[mid]; markDirty(); renderMcp(); toast('已删除', 'success');
+  });
+}
+
+// ============================================================
+// 渲染：环境变量
+// ============================================================
+function renderEnv() {
+  // 密钥
+  document.getElementById('envSecrets').innerHTML = Object.entries(state.env.secrets).map(([k, v]) => `
+    <div class="field">
+      <div class="field-label">${k} <span class="badge badge-danger">敏感</span></div>
+      <input class="input mono" type="password" value="${v}" placeholder="${k === 'ZHIPU_API_KEY' ? '智谱 Coding Plan API Key' : ''}" onchange="state.env.secrets['${k}']=this.value;markDirty()">
+      <div class="field-desc">${k === 'ZHIPU_API_KEY' ? '获取：智谱开放平台 → 个人/团队编程套餐 → 新建 API Key（套餐 Key 与普通 Key 不通用）' : ''}</div>
+    </div>
+  `).join('');
+
+  // 运行时
+  document.getElementById('envRuntime').innerHTML = Object.entries(state.env.runtime).map(([k, v]) => `
+    <div class="field">
+      <div class="field-label">${k}</div>
+      <input class="input mono" value="${v}" onchange="state.env.runtime['${k}']=this.value;markDirty()">
+      <div class="field-desc">${envDesc(k)}</div>
+    </div>
+  `).join('');
+
+  // Git
+  document.getElementById('envGit').innerHTML = Object.entries(state.env.git).map(([k, v]) => `
+    <div class="field">
+      <div class="field-label">${k}</div>
+      <input class="input mono" value="${v}" onchange="state.env.git['${k}']=this.value;markDirty()">
+    </div>
+  `).join('');
+}
+
+function envDesc(k) {
+  const d = {
+    'OLLAMA_HOST': 'draw 技能访问宿主 Ollama 的地址（macOS 用 host.docker.internal）',
+    'OPENCLI_DAEMON_HOST': 'opencli 连接宿主 daemon 的地址（容器内 127.0.0.1 指向自身）',
+    'BUN_RUNTIME_TRANSPILER_CACHE_PATH': '容器内设为 0，禁用无意义的 transpiler 缓存'
+  };
+  return d[k] || '';
+}
+
+// ============================================================
+// 渲染：Docker 配置
+// ============================================================
+function renderDocker() {
+  const d = state.docker;
+  document.getElementById('dContainerName').value = d.containerName;
+  document.getElementById('dWorkDir').value = d.workDir;
+  document.getElementById('dTty').checked = d.tty;
+  document.getElementById('dRestart').checked = d.restart;
+  document.getElementById('dExtraHosts').value = d.extraHosts;
+
+  document.getElementById('dVolumes').innerHTML = `
+    <table class="env-table">
+      <thead><tr><th>宿主路径</th><th>容器路径</th><th>用途</th></tr></thead>
+      <tbody>
+        ${d.volumes.map((v, i) => `
+          <tr>
+            <td class="env-value">${v.host}</td>
+            <td class="env-value">${v.container}</td>
+            <td class="env-source">${v.desc || ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function syncDocker() {
+  state.docker.containerName = document.getElementById('dContainerName').value;
+  state.docker.workDir = document.getElementById('dWorkDir').value;
+  state.docker.tty = document.getElementById('dTty').checked;
+  state.docker.restart = document.getElementById('dRestart').checked;
+  state.docker.extraHosts = document.getElementById('dExtraHosts').value;
+  markDirty();
+}
+
+// ============================================================
+// 渲染：技能
+// ============================================================
+function renderSkills() {
+  const list = document.getElementById('skillList');
+  if (!state.skills || state.skills.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">⚡</div><p>暂无技能，点击上方按钮加载</p></div>';
+    return;
+  }
+  list.innerHTML = state.skills.map((s, idx) => `
+    <div class="skill-card" id="skill-${idx}">
+      <div class="skill-head" onclick="toggleSkill(${idx})">
+        <div class="skill-icon" style="background:${s.iconBg || 'var(--surface-3)'};color:${s.iconColor || 'var(--text)'}">${s.icon || '⚡'}</div>
+        <div class="skill-info">
+          <div class="skill-name">${s.name}</div>
+          <div class="skill-desc">${(s.description || '').slice(0, 120)}${(s.description||'').length > 120 ? '...' : ''}</div>
+        </div>
+        ${s.allowedTools ? `<span class="badge badge-purple">allowed-tools</span>` : ''}
+        <span class="skill-expand">▶</span>
+      </div>
+      <div class="skill-body">
+        <div class="field">
+          <div class="field-label">技能名称 <span class="mono-tag">name</span></div>
+          <input class="input mono" value="${s.name}" readonly>
+        </div>
+        <div class="field">
+          <div class="field-label">描述 <span class="mono-tag">description</span></div>
+          <textarea class="input" style="min-height:100px" readonly>${s.description || ''}</textarea>
+          <div class="field-desc">此描述决定 opencode 何时自动触发该技能</div>
+        </div>
+        ${s.allowedTools ? `
+        <div class="field">
+          <div class="field-label">允许的工具 <span class="mono-tag">allowed-tools</span></div>
+          <input class="input mono" value="${s.allowedTools}" readonly>
+          <div class="field-desc">前缀授权：限定该技能可调用的工具集</div>
+        </div>
+        ` : ''}
+        <div class="field">
+          <div class="field-label">包含文件</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${(s.files || []).map(f => `<span class="badge badge-info" style="font-family:var(--mono)">${f}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleSkill(idx) {
+  document.getElementById('skill-' + idx).classList.toggle('expanded');
+}
+
+// 从目录加载（解析 SKILL.md frontmatter）
+function loadSkillsFromDir(input) {
+  const files = Array.from(input.files).filter(f => f.name === 'SKILL.md');
+  if (files.length === 0) { toast('未找到 SKILL.md 文件', 'error'); return; }
+  const skills = [];
+  let pending = files.length;
+  files.forEach(file => {
+    // 推断技能名：取所在目录名
+    const path = file.webkitRelativePath || file.name;
+    const parts = path.split('/');
+    const skillName = parts.length >= 2 ? parts[parts.length - 2] : file.name.replace('.md', '');
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const parsed = parseFrontmatter(text);
+      // 统计同目录文件
+      const dirPrefix = parts.slice(0, -1).join('/');
+      const siblings = Array.from(input.files)
+        .filter(f => (f.webkitRelativePath || '').startsWith(dirPrefix + '/') && f.name !== 'SKILL.md')
+        .map(f => (f.webkitRelativePath || f.name).replace(dirPrefix + '/', ''));
+      skills.push({
+        name: parsed.name || skillName,
+        icon: skillIcon(parsed.name || skillName),
+        iconBg: skillIconBg(parsed.name || skillName),
+        iconColor: skillIconColor(parsed.name || skillName),
+        description: parsed.description || '',
+        allowedTools: parsed['allowed-tools'] || null,
+        files: ['SKILL.md', ...siblings]
+      });
+      if (--pending === 0) {
+        state.skills = skills;
+        renderSkills();
+        renderOverview();
+        toast(`已加载 ${skills.length} 个技能`, 'success');
+        markDirty();
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+function parseFrontmatter(text) {
+  const m = text.match(/^---\n([\s\S]*?)\n---/);
+  if (!m) return {};
+  const fm = {};
+  m[1].split('\n').forEach(line => {
+    const i = line.indexOf(':');
+    if (i > 0) {
+      let key = line.slice(0, i).trim();
+      let val = line.slice(i + 1).trim();
+      // 处理 YAML > 多行
+      if (val === '>') val = ''; // 标记多行
+      fm[key] = val;
+    } else if (line.startsWith('  ') && fm.description !== undefined) {
+      // 多行 description 续行
+      fm.description += (fm.description ? ' ' : '') + line.trim();
+    }
+  });
+  return fm;
+}
+
+function skillIcon(name) {
+  if (/draw|paint|image|图/i.test(name)) return '🎨';
+  if (/ppt|slide|deck/i.test(name)) return '📊';
+  if (/browser|opencli|web/i.test(name)) return '🌐';
+  if (/search/i.test(name)) return '🔍';
+  return '⚡';
+}
+function skillIconBg(name) {
+  if (/draw|paint/i.test(name)) return 'rgba(167,139,250,0.15)';
+  if (/ppt/i.test(name)) return 'rgba(34,211,238,0.15)';
+  if (/browser|opencli/i.test(name)) return 'rgba(74,222,128,0.15)';
+  return 'rgba(108,142,239,0.15)';
+}
+function skillIconColor(name) {
+  if (/draw|paint/i.test(name)) return '#a78bfa';
+  if (/ppt/i.test(name)) return '#22d3ee';
+  if (/browser|opencli/i.test(name)) return '#4ade80';
+  return '#6c8eef';
+}
+
+function loadDefaultSkills() {
+  state.skills = JSON.parse(JSON.stringify(DEFAULT_CONFIG.skills));
+  renderSkills(); renderOverview(); toast('已加载内置技能', 'success');
+}
+
+// ============================================================
+// AGENTS.md
+// ============================================================
+function renderAgents() {
+  document.getElementById('agentRaw').value = state.agents || '';
+  // 简单解析
+  const a = state.agents || '';
+  if (/python/i.test(a)) document.getElementById('agentScriptLang').value = 'python';
+  else if (/node/i.test(a)) document.getElementById('agentScriptLang').value = 'node';
+  else if (/bash/i.test(a)) document.getElementById('agentScriptLang').value = 'bash';
+  const scriptMatch = a.match(/scripts\/[^\n]*/);
+  const outputMatch = a.match(/output\/[^\n]*/);
+  const storageMatch = a.match(/存放在(\/[^\n]*)/);
+  if (scriptMatch) document.getElementById('agentScriptDir').value = scriptMatch[0];
+  if (outputMatch) document.getElementById('agentOutputDir').value = outputMatch[0];
+}
+
+function updateAgents() {
+  // 从原始编辑器重建（表单字段作为辅助）
+  state.agents = document.getElementById('agentRaw').value;
+  markDirty();
+}
+
+// ============================================================
+// 原始编辑同步
+// ============================================================
+function syncFormToRaw() {
+  document.getElementById('rawEditor').value = JSON.stringify(state.opencode, null, 2);
+  // 生成 .env
+  const envLines = ['# 自动生成的 .env', ''];
+  Object.entries(state.env.secrets).forEach(([k, v]) => envLines.push(`${k}=${v || 'your_' + k.toLowerCase() + '_here'}`));
+  envLines.push('');
+  Object.entries(state.env.git).filter(([k]) => k.includes('AUTHOR')).forEach(([k, v]) => envLines.push(`${k}=${v}`));
+  document.getElementById('rawEnv').value = envLines.join('\n');
+  // 生成 compose
+  document.getElementById('rawCompose').value = generateCompose();
+}
+
+function syncRawToForm() {
+  try {
+    const parsed = JSON.parse(document.getElementById('rawEditor').value);
+    state.opencode = parsed;
+    renderAll();
+    toast('已应用到表单', 'success');
+  } catch (e) {
+    toast('JSON 解析错误: ' + e.message, 'error');
+  }
+}
+
+function validateRaw() {
+  try {
+    JSON.parse(document.getElementById('rawEditor').value);
+    toast('✓ JSON 格式正确', 'success');
+  } catch (e) {
+    toast('✗ JSON 错误: ' + e.message, 'error');
+  }
+}
+
+function generateCompose() {
+  const d = state.docker;
+  const envEntries = [
+    ...Object.entries(state.env.secrets).map(([k]) => `      ${k}: \${${k}}`),
+    ...Object.entries(state.env.git).map(([k, v]) => {
+      const baseKey = k.replace('COMMITTER', 'AUTHOR');
+      return `      ${k}: \${${baseKey}:-${v}}`;
+    }),
+    ...Object.entries(state.env.runtime).map(([k, v]) => `      ${k}: \${${k}:-${v}}`)
+  ].join('\n');
+  const volEntries = d.volumes.map(v => `      - ${v.host}:${v.container}`).join('\n');
+  return `services:
+  opencode:
+    build: .
+    image: opencode:latest
+    container_name: ${d.containerName}
+    stdin_open: ${d.tty}
+    tty: ${d.tty}
+    working_dir: ${d.workDir}
+
+    volumes:
+${volEntries}
+      - ./opencode-data:/root/.local/share/opencode
+
+    environment:
+${envEntries}
+
+    extra_hosts:
+      - "${d.extraHosts}"
+
+    restart: "${d.restart ? 'unless-stopped' : 'no'}"
+
+volumes:
+  opencode-data:`;
+}
+
+// ============================================================
+// 保存 / 导出 / 备份
+// ============================================================
+function markDirty() {
+  dirty = true;
+  document.getElementById('dirtyStatus').textContent = '● 未保存';
+  document.getElementById('dirtyStatus').style.color = 'var(--warning)';
+}
+
+function saveAll() {
+  // 同步 docker 表单
+  syncDocker();
+  // 同步 agents
+  state.agents = document.getElementById('agentRaw').value;
+  // 自动存 localStorage
+  createBackup(true);
+  dirty = false;
+  document.getElementById('dirtyStatus').textContent = '✓ 已保存';
+  document.getElementById('dirtyStatus').style.color = 'var(--success)';
+  toast('配置已保存到浏览器本地存储', 'success');
+}
+
+function exportAll() {
+  syncDocker();
+  state.agents = document.getElementById('agentRaw').value;
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    opencode: state.opencode,
+    env: state.env,
+    docker: state.docker,
+    agents: state.agents,
+    skills: state.skills
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `opencode-config-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('已导出完整备份', 'success');
+}
+
+function importConfig(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.opencode) state.opencode = data.opencode;
+      if (data.env) state.env = data.env;
+      if (data.docker) state.docker = data.docker;
+      if (data.agents !== undefined) state.agents = data.agents;
+      if (data.skills) state.skills = data.skills;
+      renderAll();
+      markDirty();
+      toast('配置导入成功', 'success');
+    } catch (err) {
+      toast('导入失败: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// localStorage 备份
+function createBackup(silent) {
+  const key = 'opencode-backup-' + Date.now();
+  const data = {
+    time: new Date().toISOString(),
+    opencode: state.opencode,
+    env: state.env,
+    docker: state.docker,
+    agents: state.agents,
+    skills: state.skills
+  };
+  localStorage.setItem(key, JSON.stringify(data));
+  // 只保留最近 20 个
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('opencode-backup-')).sort();
+  while (keys.length > 20) {
+    localStorage.removeItem(keys.shift());
+    keys.shift();
+  }
+  if (!silent) {
+    renderBackups();
+    toast('快照已创建', 'success');
+  }
+}
+
+function renderBackups() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('opencode-backup-')).sort().reverse();
+  document.getElementById('backupCount').textContent = keys.length;
+  if (keys.length === 0) {
+    document.getElementById('backupList').innerHTML = '<div class="empty-state"><div class="empty-icon">🗄️</div><p>暂无快照。点击「创建快照」保存当前配置。</p></div>';
+    return;
+  }
+  document.getElementById('backupList').innerHTML = keys.map(k => {
+    let data;
+    try { data = JSON.parse(localStorage.getItem(k)); } catch { return ''; }
+    const time = new Date(data.time).toLocaleString('zh-CN');
+    const size = new Blob([localStorage.getItem(k)]).size;
+    return `
+      <div class="backup-item">
+        <span class="backup-time">${time}</span>
+        <span class="backup-size">${(size / 1024).toFixed(1)} KB</span>
+        <button class="btn btn-sm" onclick="restoreBackup('${k}')">恢复</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteBackup('${k}')">删除</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function restoreBackup(key) {
+  confirmDialog('恢复快照', '将用此快照覆盖当前配置，确定？', () => {
+    const data = JSON.parse(localStorage.getItem(key));
+    state.opencode = data.opencode;
+    state.env = data.env;
+    state.docker = data.docker;
+    state.agents = data.agents;
+    state.skills = data.skills || [];
+    renderAll();
+    markDirty();
+    toast('已恢复快照', 'success');
+  });
+}
+
+function deleteBackup(key) {
+  localStorage.removeItem(key);
+  renderBackups();
+  toast('已删除', 'info');
+}
+
+// ============================================================
+// 文件下载
+// ============================================================
+function downloadFile(name, content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+  toast(`已下载 ${name}`, 'success');
+}
+
+// ============================================================
+// Toast / Modal
+// ============================================================
+function toast(msg, type = 'info') {
+  const icons = { success: '✓', error: '✗', info: 'ℹ' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type] || ''}</span> ${msg}`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 200); }, 3000);
+}
+
+function confirmDialog(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmModal').classList.add('show');
+  confirmCallback = cb;
+}
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('show');
+  confirmCallback = null;
+}
+document.getElementById('confirmOk').addEventListener('click', () => {
+  if (confirmCallback) confirmCallback();
+  closeModal();
+});
+
+// ============================================================
+// 主题
+// ============================================================
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.documentElement.setAttribute('data-theme', isLight ? '' : 'light');
+  document.getElementById('themeBtn').textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('config-theme', isLight ? 'dark' : 'light');
+}
+// 恢复主题
+if (localStorage.getItem('config-theme') === 'light') {
+  document.documentElement.setAttribute('data-theme', 'light');
+  document.getElementById('themeBtn').textContent = '☀️';
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+function renderAll() {
+  renderOverview();
+  renderProviders();
+  renderModels();
+  renderMcp();
+  renderEnv();
+  renderDocker();
+  renderSkills();
+  renderAgents();
+  renderBackups();
+  syncFormToRaw();
+}
+renderAll();
+
+// 监听 docker 表单变化
+['dContainerName','dWorkDir','dTty','dRestart','dExtraHosts'].forEach(id => {
+  document.getElementById(id).addEventListener('change', syncDocker);
+});
+
+</script>
+</body>
+</html>
